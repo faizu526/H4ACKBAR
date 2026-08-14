@@ -1,0 +1,7 @@
+# Default owners for everything
+*                       @YOUR_USER
+
+# Sensitive files require maintainer review
+/h4ackbar/sender.py     @YOUR_USER
+/SECURITY.md            @YOUR_USER
+/.github/               @YOUR_USER

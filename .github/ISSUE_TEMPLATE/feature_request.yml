@@ -1,0 +1,31 @@
+name: Feature request
+description: Propose a new feature
+title: "[feat] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you trying to do that H4ACKBAR does not support?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: checkboxes
+    id: policy
+    attributes:
+      label: Policy compliance
+      options:
+        - label: This feature does not add auto-exploit or auto-scan behavior
+          required: true
+        - label: This feature does not target specific vendors/products by name
+          required: true
