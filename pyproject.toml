@@ -28,7 +28,7 @@ dependencies = [
     "PyQt6>=6.7,<7",
     "requests>=2.32,<3",
     "beautifulsoup4>=4.12,<5",
-    "lxml>=5,<6",
+    "lxml>=5,<7",
 ]
 
 [project.optional-dependencies]
