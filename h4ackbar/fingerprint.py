@@ -9,12 +9,10 @@ Passive detection of web framework + backing DBMS from:
 
 import re
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
-
 
 # ── DBMS error signatures ───────────────────────────────────
 # Regex → DBMS. Multi-hit weighting done by caller.
-DBMS_ERROR_PATTERNS: List[tuple[re.Pattern, str, str]] = [
+DBMS_ERROR_PATTERNS: list[tuple[re.Pattern, str, str]] = [
     # MySQL / MariaDB
     (re.compile(r"You have an error in your SQL syntax.*?MySQL", re.I),          "mysql",      "syntax error banner"),
     (re.compile(r"Warning.*?mysqli?_(?:query|fetch|num_rows|connect)", re.I),    "mysql",      "mysqli warning"),
@@ -55,7 +53,7 @@ DBMS_ERROR_PATTERNS: List[tuple[re.Pattern, str, str]] = [
 
 
 # ── framework signatures ────────────────────────────────────
-FRAMEWORK_HEADER_HINTS: Dict[str, List[tuple[str, str]]] = {
+FRAMEWORK_HEADER_HINTS: dict[str, list[tuple[str, str]]] = {
     "server":         [("nginx","nginx"),("apache","apache"),("iis","iis"),
                        ("cloudflare","cloudflare"),("gunicorn","gunicorn"),
                        ("werkzeug","werkzeug/flask"),("uvicorn","uvicorn/asgi"),
@@ -67,7 +65,7 @@ FRAMEWORK_HEADER_HINTS: Dict[str, List[tuple[str, str]]] = {
     "x-generator":    [("drupal","drupal"),("wordpress","wordpress")],
 }
 
-FRAMEWORK_COOKIE_HINTS: Dict[str, str] = {
+FRAMEWORK_COOKIE_HINTS: dict[str, str] = {
     "PHPSESSID":       "php",
     "JSESSIONID":      "java",
     "ASP.NET_SessionId":"asp.net",
@@ -85,7 +83,7 @@ FRAMEWORK_COOKIE_HINTS: Dict[str, str] = {
     "next-auth.session-token":"nextjs",
 }
 
-FRAMEWORK_HTML_HINTS: List[tuple[re.Pattern, str]] = [
+FRAMEWORK_HTML_HINTS: list[tuple[re.Pattern, str]] = [
     (re.compile(r"<meta[^>]+generator[^>]+WordPress",       re.I), "wordpress"),
     (re.compile(r"<meta[^>]+generator[^>]+Drupal",          re.I), "drupal"),
     (re.compile(r"<meta[^>]+generator[^>]+Joomla",          re.I), "joomla"),
@@ -104,10 +102,10 @@ FRAMEWORK_HTML_HINTS: List[tuple[re.Pattern, str]] = [
 
 @dataclass
 class Fingerprint:
-    frameworks: List[str] = field(default_factory=list)
-    dbms:       List[str] = field(default_factory=list)
-    server:     Optional[str] = None
-    evidence:   List[str] = field(default_factory=list)
+    frameworks: list[str] = field(default_factory=list)
+    dbms:       list[str] = field(default_factory=list)
+    server:     str | None = None
+    evidence:   list[str] = field(default_factory=list)
 
     def add_fw(self, name: str, why: str):
         if name and name not in self.frameworks:
@@ -126,7 +124,7 @@ class Fingerprint:
         return f"server={sv} | framework={fw} | dbms={db}"
 
 
-def fingerprint_headers(headers: Dict[str, str], fp: Fingerprint) -> None:
+def fingerprint_headers(headers: dict[str, str], fp: Fingerprint) -> None:
     lower = {k.lower(): v for k, v in headers.items()}
     fp.server = lower.get("server")
     for hdr, hints in FRAMEWORK_HEADER_HINTS.items():
@@ -139,7 +137,7 @@ def fingerprint_headers(headers: Dict[str, str], fp: Fingerprint) -> None:
                 fp.add_fw(name, f"header {hdr}={val}")
 
 
-def fingerprint_cookies(cookies: Dict[str, str], fp: Fingerprint) -> None:
+def fingerprint_cookies(cookies: dict[str, str], fp: Fingerprint) -> None:
     for name in cookies:
         # exact + prefix match
         for pattern, fw in FRAMEWORK_COOKIE_HINTS.items():
@@ -156,9 +154,9 @@ def fingerprint_html(html: str, fp: Fingerprint) -> None:
             fp.add_fw(name, f"html pattern /{pat.pattern[:40]}/")
 
 
-def fingerprint_dbms_errors(body: str, fp: Fingerprint) -> List[tuple[str, str]]:
+def fingerprint_dbms_errors(body: str, fp: Fingerprint) -> list[tuple[str, str]]:
     """Return list of (dbms, matched_snippet_short)."""
-    hits: List[tuple[str, str]] = []
+    hits: list[tuple[str, str]] = []
     if not body:
         return hits
     for pat, dbms, note in DBMS_ERROR_PATTERNS:
@@ -170,8 +168,8 @@ def fingerprint_dbms_errors(body: str, fp: Fingerprint) -> List[tuple[str, str]]
     return hits
 
 
-def fingerprint_response(headers: Dict[str, str],
-                         cookies: Dict[str, str],
+def fingerprint_response(headers: dict[str, str],
+                         cookies: dict[str, str],
                          body: str) -> Fingerprint:
     fp = Fingerprint()
     fingerprint_headers(headers, fp)

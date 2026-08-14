@@ -5,14 +5,22 @@ Fires AnalyzerThread and emits when a report is ready so the parent
 can create result tabs.
 """
 
+from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QSpinBox,
-    QCheckBox, QPushButton, QPlainTextEdit, QProgressBar,
+    QCheckBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPlainTextEdit,
+    QProgressBar,
+    QPushButton,
+    QSpinBox,
+    QVBoxLayout,
+    QWidget,
 )
-from PyQt6.QtCore import pyqtSignal, Qt
 
-from .analyzer import AnalyzerThread, AnalysisReport
-from .theme import ACCENT, INK_SOFT, HEX_INK
+from .analyzer import AnalysisReport, AnalyzerThread
+from .theme import HEX_INK, INK_SOFT
 
 
 class AnalyzerPanel(QWidget):

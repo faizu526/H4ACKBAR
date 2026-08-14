@@ -13,19 +13,18 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
 
 
 @dataclass
 class WAFSignature:
     name: str
-    header_patterns: List[str]              # regex on header:value combined
-    body_patterns: List[str]                # regex on body
-    status_hits: List[int]                  # typical block statuses
-    tampers: List[str]                      # suggested tamper chain names
+    header_patterns: list[str]              # regex on header:value combined
+    body_patterns: list[str]                # regex on body
+    status_hits: list[int]                  # typical block statuses
+    tampers: list[str]                      # suggested tamper chain names
 
 
-WAF_CATALOG: List[WAFSignature] = [
+WAF_CATALOG: list[WAFSignature] = [
     WAFSignature("cloudflare",
         header_patterns=[r"server:\s*cloudflare", r"cf-ray:", r"__cfduid",
                          r"cf-cache-status", r"cf-request-id"],
@@ -101,9 +100,9 @@ WAF_CATALOG: List[WAFSignature] = [
 
 @dataclass
 class WAFResult:
-    detected: List[str] = field(default_factory=list)
-    evidence: List[str] = field(default_factory=list)
-    tampers: List[str] = field(default_factory=list)
+    detected: list[str] = field(default_factory=list)
+    evidence: list[str] = field(default_factory=list)
+    tampers: list[str] = field(default_factory=list)
 
     def summary(self) -> str:
         if not self.detected:
@@ -111,7 +110,7 @@ class WAFResult:
         return f"waf={','.join(self.detected)}  tampers={','.join(self.tampers)}"
 
 
-def detect(headers: Dict[str, str], body: str, status: int = 0) -> WAFResult:
+def detect(headers: dict[str, str], body: str, status: int = 0) -> WAFResult:
     """Passive WAF fingerprint from a single response."""
     hdr_blob = "\n".join(f"{k.lower()}:{v}" for k, v in (headers or {}).items())
     body_head = (body or "")[:4000].lower()
@@ -142,12 +141,12 @@ def detect(headers: Dict[str, str], body: str, status: int = 0) -> WAFResult:
 
 
 # ── quick access for UI ──────────────────────────────────────
-def suggested_tampers(waf_name: str) -> List[str]:
+def suggested_tampers(waf_name: str) -> list[str]:
     for sig in WAF_CATALOG:
         if sig.name == waf_name:
             return list(sig.tampers)
     return []
 
 
-def all_waf_names() -> List[str]:
+def all_waf_names() -> list[str]:
     return [s.name for s in WAF_CATALOG]

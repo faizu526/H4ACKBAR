@@ -51,13 +51,14 @@ Grade thresholds:
 """
 
 from __future__ import annotations
-from typing import Dict, TYPE_CHECKING
+
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .detector_deep import DeepFinding
 
 
-BASE_WEIGHTS: Dict[str, float] = {
+BASE_WEIGHTS: dict[str, float] = {
     "E": 0.40, "T": 0.30, "S": 0.25, "2": 0.25, "B": 0.20,
     "U": 0.15, "H": 0.15, "O": 0.20, "W": 0.10,
 }
@@ -71,7 +72,7 @@ GRADE_THRESHOLDS = [
 ]
 
 
-def _quality(sig: str, meta: Dict) -> float:
+def _quality(sig: str, meta: dict) -> float:
     """Per-signal quality multiplier in [0.4, 1.15]."""
     # E is binary: DBMS banner appeared, or it didn't. No quality gradient.
     if sig == "E":
@@ -120,7 +121,7 @@ def _quality(sig: str, meta: Dict) -> float:
     return 0.7
 
 
-def compute_strength(finding: "DeepFinding") -> None:
+def compute_strength(finding: DeepFinding) -> None:
     """
     Populate finding.strength (0..1) and finding.strength_grade.
     Mutates the object. Idempotent — safe to call multiple times.

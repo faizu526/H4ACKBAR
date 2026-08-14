@@ -1,7 +1,6 @@
 """Crawler helper tests — no network."""
 
-from h4ackbar.crawler import _extract_targets, _extract_links, _same_origin
-
+from h4ackbar.crawler import _extract_links, _extract_targets, _same_origin
 
 HTML_LINKS = """
 <html><body>

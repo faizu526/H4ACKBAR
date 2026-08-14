@@ -5,12 +5,11 @@ Falls back to a text banner if SVG asset is missing.
 
 from pathlib import Path
 
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QSizePolicy
-from PyQt6.QtSvgWidgets import QSvgWidget
 from PyQt6.QtCore import Qt
+from PyQt6.QtSvgWidgets import QSvgWidget
+from PyQt6.QtWidgets import QLabel, QSizePolicy, QVBoxLayout, QWidget
 
-from .theme import ACCENT, INK_SOFT, CREAM_PANEL
-
+from .theme import ACCENT, CREAM_PANEL, INK_SOFT
 
 BANNER_PATH = Path(__file__).parent.parent / "assets" / "banner.svg"
 

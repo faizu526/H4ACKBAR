@@ -4,15 +4,15 @@ Build multi-stage payloads:  seed  →  mutator*  →  encoder*  →  wire
 """
 
 from dataclasses import dataclass, field
-from typing import List
+
 from .encoders import apply_chain
 
 
 @dataclass
 class Chain:
     seed: str
-    mutators: List[str] = field(default_factory=list)
-    encoders: List[str] = field(default_factory=list)
+    mutators: list[str] = field(default_factory=list)
+    encoders: list[str] = field(default_factory=list)
 
     def render(self) -> str:
         return apply_chain(self.seed, self.mutators + self.encoders)
@@ -21,7 +21,7 @@ class Chain:
         return " → ".join(["SEED"] + self.mutators + self.encoders + ["WIRE"])
 
 
-def preset_chains(seed: str) -> List[Chain]:
+def preset_chains(seed: str) -> list[Chain]:
     """Battle-tested chains for a given seed."""
     return [
         Chain(seed, [], []),

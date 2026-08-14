@@ -21,15 +21,12 @@ Confidence:
   3+ signals = high
 """
 
-import time
-import statistics
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import List, Dict, Optional, Callable
 from difflib import SequenceMatcher
 
-from .sender import send, SendResult
-from .fingerprint import fingerprint_response, DBMS_ERROR_PATTERNS
-
+from .fingerprint import fingerprint_response
+from .sender import SendResult, send
 
 # ── probe payloads (safe, low-noise) ────────────────────────
 ERROR_PROBES = [
@@ -61,10 +58,10 @@ class Finding:
     param: str
     method: str
     inject_in: str
-    signals: List[str] = field(default_factory=list)   # ["E","B","T","U"]
-    dbms_guess: List[str] = field(default_factory=list)
+    signals: list[str] = field(default_factory=list)   # ["E","B","T","U"]
+    dbms_guess: list[str] = field(default_factory=list)
     confidence: str = "none"                            # none|low|medium|high
-    evidence: List[str] = field(default_factory=list)
+    evidence: list[str] = field(default_factory=list)
     baseline_status: int = 0
     baseline_length: int = 0
     payloads_tried: int = 0
@@ -95,7 +92,7 @@ def analyze_param(url: str,
                   param: str,
                   inject_in: str = "query",
                   time_threshold_s: float = 3.0,
-                  progress: Optional[Callable[[str], None]] = None) -> Finding:
+                  progress: Callable[[str], None] | None = None) -> Finding:
     """
     Run full 3-signal detection on ONE parameter.
     Fires ≤ ~12 requests. Never loops. Returns Finding with confidence.
@@ -182,7 +179,7 @@ def analyze_param(url: str,
         if r.error:
             continue
         # if any union probe returns 200 with distinct length vs baseline → hint
-        if r.status == base.status and abs(r.length - baseline_length) > 15:
+        if r.status == base.status and abs(r.length - base.length) > 15:
             changes += 1
         if changes >= 2:
             f.signals.append("U")
@@ -196,13 +193,13 @@ def analyze_param(url: str,
 
 
 # ── batch runner ─────────────────────────────────────────────
-def analyze_targets(targets: List[Dict],
-                    progress: Optional[Callable[[str], None]] = None) -> List[Finding]:
+def analyze_targets(targets: list[dict],
+                    progress: Callable[[str], None] | None = None) -> list[Finding]:
     """
     targets: list of dicts { url, method, param, inject_in }
     Returns list of Findings (all attempted, including 'none' confidence).
     """
-    findings: List[Finding] = []
+    findings: list[Finding] = []
     total = len(targets)
     for i, t in enumerate(targets, 1):
         if progress:

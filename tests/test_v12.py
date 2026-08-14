@@ -6,7 +6,11 @@ Run with:  python -m pytest tests/test_v12.py -v
     or:    python tests/test_v12.py
 """
 
-import sys, os, types, pathlib
+import pathlib
+import sys
+import traceback
+import types
+
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 # Provide a stub PyQt6 module tree BEFORE any h4ackbar import happens,
@@ -29,15 +33,17 @@ if "PyQt6" not in sys.modules:
     sys.modules["PyQt6"] = q
     sys.modules["PyQt6.QtCore"] = qcore
 
-from h4ackbar import sender
-from h4ackbar.sender import SendResult
-from h4ackbar import detector_deep, strength, extractor, waf
+from h4ackbar import detector_deep, extractor, sender
 from h4ackbar.detector_deep import DeepFinding, analyze_param_deep
-from h4ackbar.strength import compute_strength, BASE_WEIGHTS
 from h4ackbar.extractor import (
-    deep_extract, ExtractionRefused, _quote, _assert_readonly,
+    ExtractionRefused,
+    _assert_readonly,
     _expected_token,
+    _quote,
+    deep_extract,
 )
+from h4ackbar.sender import SendResult
+from h4ackbar.strength import compute_strength
 from h4ackbar.waf import detect as waf_detect
 
 
@@ -101,7 +107,7 @@ def test_error_signal():
     fake = FakeServer()
     def h(url, method, param, payload, inject_in, headers):
         if "'" in payload or "\"" in payload:
-            return SendResult(500, 100, 800, {}, 
+            return SendResult(500, 100, 800, {},
                 "You have an error in your SQL syntax; check the manual "
                 "that corresponds to your MySQL server version for the right syntax")
         return SendResult(200, 100, 500, {}, "ok")
@@ -380,7 +386,7 @@ if __name__ == "__main__":
         except Exception as e:
             FAIL += 1
             print(f"  \033[31m✗ EXCEPTION in {t.__name__}: {type(e).__name__}: {e}\033[0m")
-            import traceback; traceback.print_exc()
+            traceback.print_exc()
     print("=" * 60)
     print(f"PASS: {PASS}   FAIL: {FAIL}")
     print("=" * 60)

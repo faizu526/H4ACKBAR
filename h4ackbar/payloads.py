@@ -5,7 +5,6 @@ Every entry: category / label / payload / notes / tags.
 """
 
 from dataclasses import dataclass, field
-from typing import List, Dict
 
 
 @dataclass
@@ -14,7 +13,7 @@ class Payload:
     label: str
     payload: str
     notes: str = ""
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
 
 
 # ─────────────────────────────────────────────────────────────
@@ -40,8 +39,8 @@ AUTH_BYPASS = [
 # ─────────────────────────────────────────────────────────────
 # 2. UNION-BASED
 # ─────────────────────────────────────────────────────────────
-def union_variants(cols_max: int = 12) -> List[Payload]:
-    out: List[Payload] = []
+def union_variants(cols_max: int = 12) -> list[Payload]:
+    out: list[Payload] = []
     # column-count probes
     for n in range(1, cols_max + 1):
         cols = ",".join(["NULL"] * n)
@@ -254,7 +253,7 @@ WAF_BYPASS = [
 ]
 
 
-def all_payloads() -> List[Payload]:
+def all_payloads() -> list[Payload]:
     return (
         AUTH_BYPASS
         + union_variants(12)
@@ -268,7 +267,7 @@ def all_payloads() -> List[Payload]:
     )
 
 
-def categories() -> Dict[str, str]:
+def categories() -> dict[str, str]:
     return {
         "auth":       "Auth Bypass",
         "union":      "UNION-Based",

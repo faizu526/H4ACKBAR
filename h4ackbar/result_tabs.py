@@ -3,20 +3,25 @@ H4ACKBAR result-tab widgets.
 Each analysis emits a set of tabs added to the main QTabWidget.
 """
 
-from typing import List
 
-from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTableWidget,
-    QTableWidgetItem, QPlainTextEdit, QHeaderView, QAbstractItemView,
-    QPushButton, QSplitter,
-)
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QColor, QBrush, QFont
+from PyQt6.QtGui import QBrush, QColor, QFont
+from PyQt6.QtWidgets import (
+    QAbstractItemView,
+    QHBoxLayout,
+    QLabel,
+    QPlainTextEdit,
+    QSplitter,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
 
-from .theme import ACCENT, OK, WARN, BAD, INK, INK_SOFT, HEX_INK, CREAM_INPUT
+from .crawler import CrawlReport
 from .detector import Finding
 from .fingerprint import Fingerprint
-from .crawler import CrawlReport
+from .theme import ACCENT, BAD, CREAM_INPUT, HEX_INK, INK, INK_SOFT, WARN
 
 
 def _confidence_color(conf: str) -> QColor:
@@ -30,7 +35,7 @@ def _confidence_color(conf: str) -> QColor:
 
 # ── Findings tab ────────────────────────────────────────────
 class FindingsTab(QWidget):
-    def __init__(self, findings: List[Finding], parent=None):
+    def __init__(self, findings: list[Finding], parent=None):
         super().__init__(parent)
         self.findings = findings
         lay = QVBoxLayout(self)
@@ -135,7 +140,7 @@ class FingerprintTab(QWidget):
         ev.setPlainText("\n".join(fp.evidence) if fp.evidence else "(no signals)")
         lay.addWidget(ev, 1)
 
-    def _panel(self, title: str, items: List[str]) -> QWidget:
+    def _panel(self, title: str, items: list[str]) -> QWidget:
         w = QWidget()
         v = QVBoxLayout(w); v.setContentsMargins(4,4,4,4)
         t = QLabel(f"<b>{title}</b>"); t.setStyleSheet(f"color:{ACCENT};")
@@ -200,7 +205,7 @@ class CrawlTab(QWidget):
 
 # ── Log tab ────────────────────────────────────────────────
 class LogTab(QWidget):
-    def __init__(self, log: List[str], parent=None):
+    def __init__(self, log: list[str], parent=None):
         super().__init__(parent)
         lay = QVBoxLayout(self)
         lay.addWidget(QLabel("Full run log"))

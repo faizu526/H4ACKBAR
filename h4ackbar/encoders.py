@@ -3,11 +3,10 @@ H4ACKBAR encoder pipeline.
 Chainable. Every encoder is a pure function str→str.
 """
 
-import urllib.parse
 import base64
 import random
-from typing import Callable, List, Dict
-
+import urllib.parse
+from collections.abc import Callable
 
 # ── primitive encoders ──────────────────────────────────────
 
@@ -77,7 +76,7 @@ def enc_utf16(s: str) -> str:
 
 # ── registry ───────────────────────────────────────────────
 
-ENCODERS: Dict[str, Callable[[str], str]] = {
+ENCODERS: dict[str, Callable[[str], str]] = {
     "url":               enc_url,
     "url_double":        enc_url_double,
     "url_all":           enc_url_all,
@@ -102,7 +101,7 @@ ENCODERS: Dict[str, Callable[[str], str]] = {
 }
 
 
-def apply_chain(payload: str, chain: List[str]) -> str:
+def apply_chain(payload: str, chain: list[str]) -> str:
     """
     Apply encoders left→right.
     chain=['hex_0x','url']  →  url( hex_0x( payload ) )

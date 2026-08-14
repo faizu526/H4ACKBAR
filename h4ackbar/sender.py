@@ -6,7 +6,6 @@ Authorized targets only.
 
 import time
 from dataclasses import dataclass, field
-from typing import Optional, Dict
 
 import requests
 
@@ -16,9 +15,9 @@ class SendResult:
     status: int
     elapsed_ms: int
     length: int
-    headers: Dict[str, str] = field(default_factory=dict)
+    headers: dict[str, str] = field(default_factory=dict)
     body: str = ""
-    error: Optional[str] = None
+    error: str | None = None
 
 
 def send(url: str,
@@ -26,7 +25,7 @@ def send(url: str,
          payload: str,
          param: str,
          inject_in: str = "query",   # query | body | header | path
-         headers: Optional[Dict[str, str]] = None,
+         headers: dict[str, str] | None = None,
          timeout: float = 15.0,
          verify_tls: bool = True) -> SendResult:
     """

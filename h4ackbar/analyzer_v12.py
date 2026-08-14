@@ -8,27 +8,27 @@ v1.2 UI actually uses.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import List, Optional
 
 from PyQt6.QtCore import QThread, pyqtSignal
 
-from .fingerprint import fingerprint_response, Fingerprint
-from .crawler import crawl, CrawlReport
-from .detector_deep import DeepFinding, analyze_targets_deep, set_oob_verifier
-from .strength import compute_strength
+from .crawler import CrawlReport, crawl
+from .detector_deep import DeepFinding, analyze_targets_deep
+from .extractor import ExtractionRefused, deep_extract
+from .fingerprint import Fingerprint, fingerprint_response
 from .sender import send
-from .waf import detect as waf_detect, WAFResult
-from .extractor import deep_extract, ExtractionReport, ExtractionRefused
+from .strength import compute_strength
+from .waf import WAFResult
+from .waf import detect as waf_detect
 
 
 @dataclass
 class DeepAnalysisReport:
     seed_url: str
-    fingerprint: Optional[Fingerprint] = None
-    crawl_report: Optional[CrawlReport] = None
-    findings: List[DeepFinding] = field(default_factory=list)
-    waf: Optional[WAFResult] = None
-    log: List[str] = field(default_factory=list)
+    fingerprint: Fingerprint | None = None
+    crawl_report: CrawlReport | None = None
+    findings: list[DeepFinding] = field(default_factory=list)
+    waf: WAFResult | None = None
+    log: list[str] = field(default_factory=list)
 
 
 class DeepAnalyzerThread(QThread):
@@ -44,8 +44,8 @@ class DeepAnalyzerThread(QThread):
                  enable_stacked: bool = True,
                  enable_header: bool = True,
                  enable_second_order: bool = False,
-                 second_order_read_url: Optional[str] = None,
-                 oob_callback_host: Optional[str] = None,
+                 second_order_read_url: str | None = None,
+                 oob_callback_host: str | None = None,
                  rate_limit_ms: int = 150,
                  max_requests_per_target: int = 60):
         super().__init__()
@@ -163,7 +163,7 @@ class ExtractionThread(QThread):
 
     def __init__(self, finding: DeepFinding,
                  auth_token: str,
-                 targets: List[str],
+                 targets: list[str],
                  rate_limit_ms: int = 200,
                  max_len_per_field: int = 64,
                  max_total_requests: int = 800,

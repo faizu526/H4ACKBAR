@@ -1,9 +1,9 @@
 """Encoder + chain tests."""
 
 import pytest
-from h4ackbar.encoders import ENCODERS, apply_chain, hex_grid
-from h4ackbar.chain import Chain, preset_chains
 
+from h4ackbar.chain import Chain, preset_chains
+from h4ackbar.encoders import ENCODERS, apply_chain, hex_grid
 
 SEED = "' OR 1=1-- -"
 

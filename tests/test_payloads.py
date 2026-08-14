@@ -1,6 +1,6 @@
 """Payload catalog integrity tests."""
 
-from h4ackbar.payloads import all_payloads, categories, Payload
+from h4ackbar.payloads import Payload, all_payloads, categories
 
 
 def test_catalog_nonempty():
@@ -25,8 +25,8 @@ def test_no_empty_payload_strings():
 def test_union_variants_have_column_probes():
     p = all_payloads()
     labels = [x.label for x in p]
-    assert any("ORDER BY 1" in l for l in labels)
-    assert any("UNION NULL x1" in l for l in labels)
+    assert any("ORDER BY 1" in label for label in labels)
+    assert any("UNION NULL x1" in label for label in labels)
 
 
 def test_time_blind_has_all_dbms():

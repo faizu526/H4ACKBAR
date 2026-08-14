@@ -10,39 +10,55 @@ Enhanced UI:
 Authorized security testing only.
 """
 
-import sys
 import json
+import sys
 from datetime import datetime
-from typing import List
 
-from PyQt6.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QTreeWidget, QTreeWidgetItem, QTableWidget, QTableWidgetItem,
-    QPlainTextEdit, QLineEdit, QPushButton, QComboBox, QLabel,
-    QSplitter, QStatusBar, QListWidget, QListWidgetItem, QDialog,
-    QHeaderView, QAbstractItemView, QFileDialog, QTabWidget,
-    QMessageBox,
-)
-from PyQt6.QtGui import QAction, QFont, QKeySequence, QShortcut, QIcon
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QAction, QFont, QKeySequence, QShortcut
+from PyQt6.QtWidgets import (
+    QAbstractItemView,
+    QApplication,
+    QComboBox,
+    QDialog,
+    QFileDialog,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QListWidgetItem,
+    QMainWindow,
+    QMessageBox,
+    QPlainTextEdit,
+    QPushButton,
+    QSplitter,
+    QStatusBar,
+    QTableWidget,
+    QTableWidgetItem,
+    QTabWidget,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
 
-from .payloads import all_payloads, categories, Payload
-from .encoders import ENCODERS, hex_grid
-from .chain import Chain, preset_chains
-from .sender import send
-from .banner import Banner
-from .theme import stylesheet, ACCENT, INK_SOFT
-from .analyzer_panel import AnalyzerPanel
+from . import __version__
 from .analyzer import AnalysisReport
-from .result_tabs import FindingsTab, FingerprintTab, CrawlTab, LogTab
+from .analyzer_panel import AnalyzerPanel
 
 # v1.2.0 additions
 from .analyzer_panel_v12 import DeepAnalyzerPanel
 from .analyzer_v12 import DeepAnalysisReport, ExtractionThread
-from .result_tabs_v12 import DeepFindingsTab, ExtractionTab, WAFTab
+from .banner import Banner
+from .chain import Chain, preset_chains
 from .detector_deep import DeepFinding
-from .extractor import ExtractionReport
-from . import __version__
+from .encoders import ENCODERS, hex_grid
+from .payloads import Payload, all_payloads, categories
+from .result_tabs import CrawlTab, FindingsTab, FingerprintTab, LogTab
+from .result_tabs_v12 import DeepFindingsTab, ExtractionTab, WAFTab
+from .sender import send
+from .theme import ACCENT, stylesheet
 
 
 # ─────────────────────────────────────────────────────────────
@@ -102,7 +118,7 @@ class WorkbenchTab(QWidget):
         self.main = main
         self._build()
         self.chain = Chain(seed="")
-        self._all_payloads: List[Payload] = []
+        self._all_payloads: list[Payload] = []
         self._reload_payloads()
 
     # ── UI ─────────────────────────────────────────────────
@@ -233,7 +249,7 @@ class WorkbenchTab(QWidget):
         self._fill_table(self._all_payloads)
         self.main.status.showMessage(f"{len(self._all_payloads)} payloads loaded")
 
-    def _fill_table(self, plist: List[Payload]):
+    def _fill_table(self, plist: list[Payload]):
         self.table.setSortingEnabled(False)
         self.table.setRowCount(0)
         for p in plist:

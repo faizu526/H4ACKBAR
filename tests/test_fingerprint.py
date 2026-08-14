@@ -1,7 +1,8 @@
 """Fingerprinter unit tests."""
 
 from h4ackbar.fingerprint import (
-    fingerprint_response, fingerprint_dbms_errors, Fingerprint,
+    Fingerprint,
+    fingerprint_response,
 )
 
 

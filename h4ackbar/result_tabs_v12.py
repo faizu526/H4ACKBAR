@@ -6,21 +6,36 @@ by anything expecting the old surface.
 """
 
 from __future__ import annotations
-from typing import List, Dict
 
-from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTableWidget, QTableWidgetItem,
-    QPlainTextEdit, QHeaderView, QAbstractItemView, QPushButton, QSplitter,
-    QTreeWidget, QTreeWidgetItem, QProgressBar, QLineEdit, QComboBox,
-    QCheckBox, QMessageBox, QGroupBox, QFileDialog,
-)
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QColor, QBrush, QFont
+from PyQt6.QtGui import QBrush, QColor, QFont
+from PyQt6.QtWidgets import (
+    QAbstractItemView,
+    QCheckBox,
+    QComboBox,
+    QFileDialog,
+    QGroupBox,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QPlainTextEdit,
+    QProgressBar,
+    QPushButton,
+    QSplitter,
+    QTableWidget,
+    QTableWidgetItem,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
 
-from .theme import ACCENT, OK, WARN, BAD, INK, INK_SOFT, HEX_INK, CREAM_INPUT
 from .detector_deep import DeepFinding
-from .strength import strength_color, strength_bar
 from .extractor import ExtractionReport
+from .strength import strength_bar, strength_color
+from .theme import ACCENT, BAD, HEX_INK, INK, INK_SOFT
 from .waf import WAFResult
 
 
@@ -30,7 +45,7 @@ class DeepFindingsTab(QWidget):
 
     extract_requested = pyqtSignal(object)  # emits DeepFinding
 
-    def __init__(self, findings: List[DeepFinding], parent=None):
+    def __init__(self, findings: list[DeepFinding], parent=None):
         super().__init__(parent)
         self.findings = findings
         lay = QVBoxLayout(self)
@@ -170,6 +185,7 @@ class DeepFindingsTab(QWidget):
 
     def _on_copy_token(self):
         from urllib.parse import urlparse
+
         from PyQt6.QtWidgets import QApplication
         f = self._selected_finding()
         if not f: return
@@ -403,7 +419,7 @@ class ExtractionTab(QWidget):
             for e in report.errors: self.log.appendPlainText(f"  {e}")
 
     def _on_export(self):
-        import json, dataclasses
+        import json
         if not self._last_report:
             return
         path, _ = QFileDialog.getSaveFileName(

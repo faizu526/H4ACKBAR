@@ -12,8 +12,8 @@ Never floods — configurable delay between requests.
 import time
 import urllib.parse
 from collections import deque
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import List, Set, Dict, Optional, Callable
 from urllib.robotparser import RobotFileParser
 
 import requests
@@ -31,9 +31,9 @@ class Target:
 
 @dataclass
 class CrawlReport:
-    pages_visited: List[str] = field(default_factory=list)
-    targets: List[Target] = field(default_factory=list)
-    errors: List[str] = field(default_factory=list)
+    pages_visited: list[str] = field(default_factory=list)
+    targets: list[Target] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
     duration_s: float = 0.0
 
 
@@ -43,7 +43,7 @@ def _same_origin(a: str, b: str) -> bool:
     return (pa.scheme, pa.netloc) == (pb.scheme, pb.netloc)
 
 
-def _fetch(url: str, timeout: float = 10.0) -> Optional[requests.Response]:
+def _fetch(url: str, timeout: float = 10.0) -> requests.Response | None:
     try:
         return requests.get(
             url,
@@ -68,8 +68,8 @@ def _load_robots(base: str) -> RobotFileParser:
     return rp
 
 
-def _extract_targets(page_url: str, html: str) -> List[Target]:
-    out: List[Target] = []
+def _extract_targets(page_url: str, html: str) -> list[Target]:
+    out: list[Target] = []
     soup = BeautifulSoup(html, "lxml")
 
     # 1) links with query params
@@ -102,7 +102,7 @@ def _extract_targets(page_url: str, html: str) -> List[Target]:
     return out
 
 
-def _extract_links(page_url: str, html: str) -> List[str]:
+def _extract_links(page_url: str, html: str) -> list[str]:
     soup = BeautifulSoup(html, "lxml")
     out = []
     for a in soup.find_all("a", href=True):
@@ -118,7 +118,7 @@ def crawl(seed_url: str,
           max_depth: int = 2,
           delay_ms: int = 250,
           respect_robots: bool = True,
-          progress: Optional[Callable[[str], None]] = None) -> CrawlReport:
+          progress: Callable[[str], None] | None = None) -> CrawlReport:
     """
     BFS crawl. Same-origin only. Bounded by max_pages / max_depth.
     """
@@ -130,8 +130,8 @@ def crawl(seed_url: str,
         return report
 
     rp = _load_robots(seed_url) if respect_robots else None
-    visited: Set[str] = set()
-    seen_targets: Set[tuple] = set()
+    visited: set[str] = set()
+    seen_targets: set[tuple] = set()
     queue: deque = deque([(seed_url, 0)])
 
     while queue and len(report.pages_visited) < max_pages:

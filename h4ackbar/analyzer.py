@@ -6,23 +6,22 @@ Emits signals on progress and completion.
 """
 
 from dataclasses import dataclass, field
-from typing import List, Optional
 
 from PyQt6.QtCore import QThread, pyqtSignal
 
-from .fingerprint import fingerprint_response, Fingerprint
-from .crawler import crawl, CrawlReport, Target
-from .detector import analyze_targets, Finding
+from .crawler import CrawlReport, crawl
+from .detector import Finding, analyze_targets
+from .fingerprint import Fingerprint, fingerprint_response
 from .sender import send
 
 
 @dataclass
 class AnalysisReport:
     seed_url: str
-    fingerprint: Optional[Fingerprint] = None
-    crawl_report: Optional[CrawlReport] = None
-    findings: List[Finding] = field(default_factory=list)
-    log: List[str] = field(default_factory=list)
+    fingerprint: Fingerprint | None = None
+    crawl_report: CrawlReport | None = None
+    findings: list[Finding] = field(default_factory=list)
+    log: list[str] = field(default_factory=list)
 
 
 class AnalyzerThread(QThread):

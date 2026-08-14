@@ -10,14 +10,23 @@ Adds:
 
 from __future__ import annotations
 
+from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QSpinBox,
-    QCheckBox, QPushButton, QPlainTextEdit, QProgressBar, QGroupBox,
+    QCheckBox,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPlainTextEdit,
+    QProgressBar,
+    QPushButton,
+    QSpinBox,
+    QVBoxLayout,
+    QWidget,
 )
-from PyQt6.QtCore import pyqtSignal, Qt
 
-from .analyzer_v12 import DeepAnalyzerThread, DeepAnalysisReport
-from .theme import ACCENT, INK_SOFT, HEX_INK, BAD
+from .analyzer_v12 import DeepAnalysisReport, DeepAnalyzerThread
+from .theme import HEX_INK, INK_SOFT
 
 
 class DeepAnalyzerPanel(QWidget):
