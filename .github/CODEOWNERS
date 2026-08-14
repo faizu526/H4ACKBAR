@@ -1,7 +1,7 @@
 # Default owners for everything
-*                       @YOUR_USER
+*                       @faizu526
 
 # Sensitive files require maintainer review
-/h4ackbar/sender.py     @YOUR_USER
-/SECURITY.md            @YOUR_USER
-/.github/               @YOUR_USER
+/h4ackbar/sender.py     @faizu526
+/SECURITY.md            @faizu526
+/.github/               @faizu526

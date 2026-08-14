@@ -25,7 +25,7 @@ execution via a malicious session file, dependency CVE), report it privately:
 
 1. Do **not** open a public GitHub issue.
 2. Open a private security advisory:
-   `https://github.com/YOUR_USER/H4ACKBAR/security/advisories/new`
+   `https://github.com/faizu526/H4ACKBAR/security/advisories/new`
 3. Include: version, OS, reproduction steps, impact assessment.
 
 We aim to acknowledge within **72 hours** and issue a patch within **14 days**

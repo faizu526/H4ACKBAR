@@ -133,7 +133,7 @@ each set of findings lives in its own tab group.
 ## Install
 
 ```bash
-git clone https://github.com/YOUR_USER/H4ACKBAR.git
+git clone https://github.com/faizu526/H4ACKBAR.git
 cd H4ACKBAR
 python3 -m venv .venv
 source .venv/bin/activate         # Windows: .venv\Scripts\activate

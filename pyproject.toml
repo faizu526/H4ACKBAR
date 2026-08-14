@@ -43,9 +43,9 @@ dev = [
 h4ackbar = "h4ackbar.app:main"
 
 [project.urls]
-Homepage      = "https://github.com/YOUR_USER/H4ACKBAR"
-Repository    = "https://github.com/YOUR_USER/H4ACKBAR"
-Issues        = "https://github.com/YOUR_USER/H4ACKBAR/issues"
+Homepage      = "https://github.com/faizu526/H4ACKBAR"
+Repository    = "https://github.com/faizu526/H4ACKBAR"
+Issues        = "https://github.com/faizu526/H4ACKBAR/issues"
 
 [tool.setuptools.packages.find]
 include = ["h4ackbar*"]
