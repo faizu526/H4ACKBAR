@@ -1,0 +1,8 @@
+{
+  "servers": {
+    "github": {
+      "type": "http",
+      "url": "https://ant-wheel-announce-arrow.trycloudflare.com/mcp"
+    }
+  }
+}
